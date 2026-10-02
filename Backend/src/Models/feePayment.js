@@ -26,6 +26,7 @@ const feePaymentSchema = new mongoose.Schema(
       enum: [
         "Cash",
         "UPI",
+        "Razorpay",
         "Card",
         "Net Banking",
         "Bank Transfer",
@@ -37,6 +38,14 @@ const feePaymentSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+
+    razorpayOrderId: {
+      type: String,
+    },
+
+    razorpayPaymentId: {
+      type: String,
     },
 
     paymentDate: {
@@ -66,6 +75,33 @@ const feePaymentSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+  }
+);
+
+feePaymentSchema.index(
+  { razorpayOrderId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { razorpayOrderId: { $type: "string" } },
+  }
+);
+
+feePaymentSchema.index(
+  { razorpayPaymentId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { razorpayPaymentId: { $type: "string" } },
+  }
+);
+
+feePaymentSchema.index(
+  { studentFeeId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: "Pending",
+      paymentMethod: "Razorpay",
+    },
   }
 );
 

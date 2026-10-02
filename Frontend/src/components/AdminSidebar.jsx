@@ -133,7 +133,10 @@ function AdminSidebar({
 
           w-[280px]
 
-          lg:static
+          lg:sticky
+          lg:top-0
+          lg:h-screen
+          lg:self-start
           lg:z-auto
           lg:shadow-none
 
@@ -439,4 +442,3 @@ function AdminSidebar({
 }
 
 export default AdminSidebar;
-

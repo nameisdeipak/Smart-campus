@@ -1,434 +1,287 @@
-import { useState } from "react";
-import axios from "axios";
-
+import { useEffect, useRef, useState } from "react";
 import {
   Bot,
   MessageCircle,
   Mic,
-  User,
+  Send,
   Sparkles,
-  Volume2,
   Trash2,
+  User,
+  Volume2,
 } from "lucide-react";
+import axiosClient from "../../../services/axiosClient";
 
-function AIAssistant({ studentName }) {
+const suggestions = [
+  ["How is my attendance?", "What is my attendance?"],
+  ["Explain my marks", "How am I doing in my subjects?"],
+  ["What fees are due?", "How much fee do I still need to pay?"],
+  ["Help me make a study plan", "Give me a study plan based on my performance"],
+];
+
+function AIAssistant({ studentName = "your" }) {
   const [query, setQuery] = useState("");
-
   const [messages, setMessages] = useState([]);
-
   const [loading, setLoading] = useState(false);
-
   const [listening, setListening] = useState(false);
+  const [error, setError] = useState("");
+  const messagesEndRef = useRef(null);
 
-  // ==========================================
-  // TEXT TO SPEECH
-  // ==========================================
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const speak = (text) => {
-    if (!("speechSynthesis" in window)) {
-      return;
-    }
+    if (!("speechSynthesis" in window)) return;
 
     window.speechSynthesis.cancel();
-
     const speech = new SpeechSynthesisUtterance(text);
-
-    speech.lang = "en-US";
-
-    speech.rate = 1;
-
-    speech.pitch = 1;
-
+    speech.lang = "en-IN";
     window.speechSynthesis.speak(speech);
   };
 
-  // ==========================================
-  // ASK AI
-  // ==========================================
+  const askAI = async (customQuery) => {
+    const question = (customQuery ?? query).trim();
+    if (!question || loading) return;
 
-  const askAI = async (customQuery = "") => {
-    const finalQuery = customQuery.trim() || query.trim();
+    const userMessage = { role: "user", content: question };
+    const history = [...messages, userMessage].slice(-40);
+    while (history[0]?.role !== "user") history.shift();
 
-    if (!finalQuery) {
-      return;
-    }
-
-    // USER MESSAGE
-
-    setMessages((previous) => [
-      ...previous,
-
-      {
-        type: "user",
-        text: finalQuery,
-      },
-    ]);
-
+    setMessages(history);
     setQuery("");
-
+    setError("");
     setLoading(true);
 
     try {
-      const { data } = await axios.get("http://localhost:3000/api/ai", {
-        params: {
-          query: finalQuery,
-        },
+      const { data } = await axiosClient.post("/student/ai/chat", {
+        messages: history.map(({ role, content }) => ({ role, content })),
       });
 
-      if (!data.success) {
-        const errorMessage = "Sorry, I could not find the student.";
-
-        setMessages((previous) => [
-          ...previous,
-
-          {
-            type: "ai",
-            text: errorMessage,
-          },
-        ]);
-
-        speak(errorMessage);
-
-        return;
+      if (!data.success || !data.answer) {
+        throw new Error(data.message || "AI Assistant could not answer");
       }
-
-      // ==================================
-      // NORMAL ANSWER
-      // ==================================
-
-      if (data.type !== "recommendation") {
-        setMessages((previous) => [
-          ...previous,
-
-          {
-            type: "ai",
-            text: data.answer,
-          },
-        ]);
-
-        speak(data.answer);
-      }
-
-      // ==================================
-      // RECOMMENDATIONS
-      // ==================================
-      else {
-        const recommendationText = data.recommendations
-          .map((item, index) => `${index + 1}. ${item}`)
-          .join("\n");
-
-        setMessages((previous) => [
-          ...previous,
-
-          {
-            type: "ai",
-            text: recommendationText,
-          },
-        ]);
-
-        speak(data.recommendations.join(". "));
-      }
-    } catch (error) {
-      console.error("AI API Error:", error);
-
-      const errorMessage =
-        "AI server is not available. Please check the FastAPI server.";
 
       setMessages((previous) => [
         ...previous,
-
-        {
-          type: "ai",
-          text: errorMessage,
-        },
+        { role: "assistant", content: data.answer },
       ]);
-
-      speak(errorMessage);
+    } catch (requestError) {
+      const message =
+        requestError.response?.data?.message ||
+        requestError.message ||
+        "Could not reach the AI Assistant. Please try again.";
+      setError(message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
-
-  // ==========================================
-  // VOICE RECOGNITION
-  // ==========================================
 
   const startVoice = () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Voice recognition is not supported. Please use Google Chrome.");
-
+      setError("Voice input is not supported in this browser. You can type instead.");
       return;
     }
 
     const recognition = new SpeechRecognition();
-
-    recognition.lang = "en-US";
-
+    recognition.lang = "en-IN";
     recognition.continuous = false;
-
     recognition.interimResults = false;
-
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      setListening(true);
-    };
-
+    recognition.onstart = () => setListening(true);
     recognition.onresult = (event) => {
-      const spokenText = event.results[0][0].transcript;
-
-      console.log("Voice:", spokenText);
-
-      setListening(false);
-
-      setQuery(spokenText);
-
-      askAI(spokenText);
+      void askAI(event.results[0][0].transcript);
     };
-
-    recognition.onerror = (event) => {
-      console.error("Voice Error:", event.error);
-
+    recognition.onerror = () => {
+      setError("Voice input could not be started. Please type your question.");
       setListening(false);
     };
-
-    recognition.onend = () => {
-      setListening(false);
-    };
-
+    recognition.onend = () => setListening(false);
     recognition.start();
   };
 
-  // ==========================================
-  // CLEAR CHAT
-  // ==========================================
-
   const clearChat = () => {
     setMessages([]);
-
+    setError("");
     window.speechSynthesis?.cancel();
   };
 
-  // ==========================================
-  // UI
-  // ==========================================
-
   return (
-    <div className="flex h-[450px] max-w-5.5xl flex-col rounded-2xl bg-slate-900 p-5 text-white">
-      {/* ================================= */}
-      {/* HEADER */}
-      {/* ================================= */}
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-white/10 p-3">
-            <Bot size={23} />
+    <section className="flex h-[min(680px,75vh)] min-h-[480px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="rounded-xl bg-slate-900 p-2.5 text-white">
+            <Bot size={22} />
           </div>
-
-          <div>
-            <h2 className="font-bold">Campus AI Assistant</h2>
-
-            <p className="text-xs text-slate-400">
-              Ask about {studentName}'s academics
+          <div className="min-w-0">
+            <h2 className="truncate font-bold text-slate-900">
+              Campus AI Assistant
+            </h2>
+            <p className="text-xs text-slate-500">
+              Ask about {studentName} academics, attendance or fees
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-3 py-1">
-            <Sparkles size={12} className="text-emerald-400" />
-
-            <span className="text-xs text-emerald-300">Online</span>
-          </div>
-
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 sm:inline-flex">
+            <Sparkles size={13} />
+            Gemini
+          </span>
           {messages.length > 0 && (
             <button
+              type="button"
               onClick={clearChat}
-              className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+              disabled={loading}
+              aria-label="Clear chat"
+              title="Clear chat"
+              className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 disabled:opacity-50"
             >
-              <Trash2 size={16} />
+              <Trash2 size={17} />
             </button>
           )}
         </div>
-      </div>
+      </header>
 
-      {/* ================================= */}
-      {/* CHAT AREA */}
-      {/* ================================= */}
-
-      <div className="mt-5 h-[300px] overflow-y-auto space-y-3 pr-1 md:h-[350px]">
-        {/* EMPTY STATE */}
-
+      <div
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/70 p-4 sm:p-6"
+        aria-live="polite"
+      >
         {messages.length === 0 && (
-          <div className="rounded-xl bg-white/5 p-5">
-            <div className="flex items-center gap-2">
-              <Bot size={18} className="text-slate-300" />
-
-              <p className="text-sm text-slate-300">
-                Hi! I'm your Smart Campus AI Assistant.
-              </p>
+          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-slate-200 bg-white p-5 sm:mt-10">
+            <div className="flex items-center gap-2 text-slate-900">
+              <Bot size={19} />
+              <p className="font-semibold">Hi! What would you like help with?</p>
             </div>
-
-            <p className="mt-4 text-xs text-slate-500">Try asking:</p>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                onClick={() => askAI("What is my attendance?")}
-                className="rounded-lg bg-white/10 px-3 py-2 text-xs hover:bg-white/20"
-              >
-                Attendance
-              </button>
-
-              <button
-                onClick={() => askAI("What is my performance?")}
-                className="rounded-lg bg-white/10 px-3 py-2 text-xs hover:bg-white/20"
-              >
-                Performance
-              </button>
-
-              <button
-                onClick={() => askAI("What is my risk?")}
-                className="rounded-lg bg-white/10 px-3 py-2 text-xs hover:bg-white/20"
-              >
-                Risk
-              </button>
-
-              <button
-                onClick={() => askAI("Give me study recommendations")}
-                className="rounded-lg bg-white/10 px-3 py-2 text-xs hover:bg-white/20"
-              >
-                Recommendations
-              </button>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              I can answer using the academic information in your campus account.
+              Try one of these:
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {suggestions.map(([label, question]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => void askAI(question)}
+                  disabled={loading}
+                  className="rounded-full border border-slate-200 px-3 py-2 text-left text-xs font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* MESSAGES */}
-
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={
-              message.type === "user"
-                ? "flex justify-end"
-                : "flex justify-start"
-            }
-          >
+        {messages.map((message, index) => {
+          const isUser = message.role === "user";
+          return (
             <div
-              className={`
-                                    max-w-[85%]
-                                    rounded-xl
-                                    px-4
-                                    py-3
-                                    text-sm
-                                    whitespace-pre-line
-                                    ${
-                                      message.type === "user"
-                                        ? "bg-white text-slate-900"
-                                        : "bg-white/10 text-slate-200"
-                                    }
-                                `}
+              key={`${index}-${message.role}`}
+              className={`flex items-end gap-2 ${
+                isUser ? "justify-end" : "justify-start"
+              }`}
             >
-              <div className="mb-2 flex items-center gap-2">
-                {message.type === "user" ? (
-                  <User size={13} />
-                ) : (
-                  <Bot size={13} />
-                )}
-
-                <span className="text-xs opacity-60">
-                  {message.type === "user" ? "You" : "Smart Campus AI"}
+              {!isUser && (
+                <span className="mb-1 rounded-full bg-slate-200 p-2 text-slate-700">
+                  <Bot size={15} />
                 </span>
+              )}
+              <div
+                className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm sm:max-w-[78%] ${
+                  isUser
+                    ? "rounded-br-md bg-slate-900 text-white"
+                    : "rounded-bl-md border border-slate-200 bg-white text-slate-700"
+                }`}
+              >
+                <p className="whitespace-pre-wrap break-words">
+                  {message.content}
+                </p>
+                {!isUser && (
+                  <button
+                    type="button"
+                    onClick={() => speak(message.content)}
+                    aria-label="Read answer aloud"
+                    className="mt-2 inline-flex items-center gap-1 text-xs text-slate-400 transition hover:text-slate-700"
+                  >
+                    <Volume2 size={13} />
+                    Listen
+                  </button>
+                )}
               </div>
-
-              <div>{message.text}</div>
-
-              {/* AI SPEAK BUTTON */}
-
-              {message.type === "ai" && (
-                <button
-                  onClick={() => speak(message.text)}
-                  className="mt-3 flex items-center gap-1 text-xs text-slate-400 hover:text-white"
-                >
-                  <Volume2 size={14} />
-                  Speak
-                </button>
+              {isUser && (
+                <span className="mb-1 rounded-full bg-slate-900 p-2 text-white">
+                  <User size={15} />
+                </span>
               )}
             </div>
-          </div>
-        ))}
-
-        {/* LOADING */}
+          );
+        })}
 
         {loading && (
-          <div className="flex justify-start">
-            <div className="rounded-xl bg-white/10 px-4 py-3 text-sm text-slate-400">
-              AI is thinking...
-            </div>
+          <div className="flex items-end gap-2">
+            <span className="mb-1 rounded-full bg-slate-200 p-2 text-slate-700">
+              <Bot size={15} />
+            </span>
+            <p className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+              Thinking...
+            </p>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* ================================= */}
-      {/* INPUT */}
-      {/* ================================= */}
-
-      <div className="mt-5 flex gap-2">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              askAI();
-            }
-          }}
-          placeholder="Ask about attendance, marks..."
-          className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-white/30"
-        />
-
-        <button
-          onClick={() => askAI()}
-          disabled={loading || !query.trim()}
-          className="rounded-xl bg-white px-4 text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <MessageCircle size={19} />
-        </button>
-      </div>
-
-      {/* ================================= */}
-      {/* VOICE BUTTON */}
-      {/* ================================= */}
-
-      <button
-        onClick={startVoice}
-        disabled={listening}
-        className={`
-                    mt-3
-                    flex
-                    w-full
-                    items-center
-                    justify-center
-                    gap-2
-                    rounded-xl
-                    border
-                    py-3
-                    text-sm
-                    transition
-                    ${
-                      listening
-                        ? "border-red-400/30 bg-red-500/10 text-red-300"
-                        : "border-white/10 bg-white/5 hover:bg-white/10"
-                    }
-                `}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void askAI();
+        }}
+        className="border-t border-slate-100 bg-white p-4 sm:p-5"
       >
-        <Mic size={18} className={listening ? "animate-pulse" : ""} />
-
-        {listening ? "Listening..." : "🎤 Talk to AI Assistant"}
-      </button>
-    </div>
+        {error && (
+          <p role="alert" className="mb-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+        <div className="flex items-center gap-2">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            maxLength={3000}
+            disabled={loading}
+            aria-label="Ask the AI Assistant"
+            placeholder="Ask about your attendance, marks, fees..."
+            className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-400 focus:bg-white disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={startVoice}
+            disabled={loading || listening}
+            aria-label="Ask using voice"
+            title={listening ? "Listening..." : "Ask using voice"}
+            className={`rounded-xl border p-3 transition disabled:opacity-50 ${
+              listening
+                ? "border-red-200 bg-red-50 text-red-600"
+                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <Mic size={18} className={listening ? "animate-pulse" : ""} />
+          </button>
+          <button
+            type="submit"
+            disabled={loading || !query.trim()}
+            aria-label="Send message"
+            className="rounded-xl bg-slate-900 p-3 text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {loading ? <MessageCircle size={18} /> : <Send size={18} />}
+          </button>
+        </div>
+        <p className="mt-2 text-center text-[11px] text-slate-400">
+          Uses your campus records. Check important decisions with your campus
+          office.
+        </p>
+      </form>
+    </section>
   );
 }
 

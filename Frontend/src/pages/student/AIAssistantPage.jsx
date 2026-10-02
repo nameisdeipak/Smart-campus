@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PageLayout from "../../components/student/PageLayout";
+import AIAssistant from "../../components/student/Dashboard/AIAssistant";
 import axiosClient from "../../services/axiosClient";
 
 function AIAssistantPage() {
@@ -13,7 +14,10 @@ function AIAssistantPage() {
     <PageLayout>
       <div>
         <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">AI Academic Assistant</h1>
-        <p className="mt-2 text-sm text-slate-500">Personalized academic insights based on your current campus data.</p>
+        <p className="mt-2 text-sm text-slate-500">Ask questions and get answers based on your current campus data.</p>
+      </div>
+      <div className="mt-6">
+        <AIAssistant />
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><p className="text-sm text-slate-500">Support Risk</p><p className="mt-2 text-4xl font-bold text-slate-900">{data?.risk || "-"}</p><p className="mt-3 text-sm text-slate-500">Prediction source: {data?.source || "loading"}</p></div>

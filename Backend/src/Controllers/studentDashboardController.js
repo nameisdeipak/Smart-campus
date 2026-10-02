@@ -1,5 +1,4 @@
 const axios = require("axios");
-
 const Student = require("../Models/student");
 const Attendance = require("../Models/attandance");
 const Marks = require("../Models/marks");
@@ -81,13 +80,13 @@ const getStudentBundle = async (student) => {
   const [attendanceRecords, marksRecords, subjects, fees, payments, certificates, tickets, timetable] = await Promise.all([
     Attendance.find({ studentId }).sort({ date: -1 }).lean(),
     Marks.find({ studentId }).sort({ semester: -1, subject: 1 }).lean(),
-    StudentSubject.find({ studentId, enrollmentStatus: "Enrolled" }).populate("subjectId", "code name type credits").lean(),
-    StudentFee.find({ studentId, isActive: true }).populate("feeStructureId", "name category academicYear").sort({ dueDate: 1 }).lean(),
+    StudentSubject.find({ studentId, enrollmentStatus: "Enrolled" }).populate("subjectId", "subjectCode subjectName subjectType credits").lean(),
+    StudentFee.find({ studentId, isActive: true }).populate("feeStructureId", "academicYear feeItems totalAmount").sort({ dueDate: 1 }).lean(),
     FeePayment.find({ studentId }).sort({ paymentDate: -1 }).lean(),
     Certificate.find({ studentId }).sort({ createdAt: -1 }).lean(),
     HelpDesk.find({ studentId, isActive: true }).sort({ createdAt: -1 }).lean(),
     TimeTable.find({ section: student.section, academicYear: process.env.ACADEMIC_YEAR || "2026-27" })
-      .populate("subjectId", "code name")
+      .populate("subjectId", "subjectCode subjectName")
       .populate("facultyId", "userId")
       .sort({ dayOrder: 1, startTime: 1 })
       .lean(),
@@ -181,8 +180,11 @@ const getMyFees = async (req, res) => {
   try {
     const student = await getStudentFromUser(req.user._id);
     const [fees, payments] = await Promise.all([
-      StudentFee.find({ studentId: student._id, isActive: true }).populate("feeStructureId", "name category academicYear").sort({ dueDate: 1 }).lean(),
-      FeePayment.find({ studentId: student._id }).sort({ paymentDate: -1 }).lean(),
+      StudentFee.find({ studentId: student._id, isActive: true }).populate("feeStructureId", "academicYear feeItems totalAmount").sort({ dueDate: 1 }).lean(),
+      FeePayment.find({
+        studentId: student._id,
+        status: { $ne: "Pending" },
+      }).sort({ paymentDate: -1 }).lean(),
     ]);
     return res.json({ success: true, fees, payments });
   } catch (error) {
@@ -204,7 +206,7 @@ const getMyTimetable = async (req, res) => {
   try {
     const student = await getStudentFromUser(req.user._id);
     const timetable = await TimeTable.find({ section: student.section, academicYear: process.env.ACADEMIC_YEAR || "2026-27" })
-      .populate("subjectId", "code name")
+      .populate("subjectId", "subjectCode subjectName")
       .populate("facultyId", "userId")
       .sort({ dayOrder: 1, startTime: 1 })
       .lean();

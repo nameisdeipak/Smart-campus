@@ -80,12 +80,12 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="h-dvh overflow-hidden bg-slate-950">
 
-      <div className="flex min-h-screen">
+      <div className="flex h-full min-h-0">
 
 
-        <div className="relative hidden w-1/2 overflow-hidden lg:flex">
+        <div className="relative hidden h-full w-1/2 overflow-hidden lg:flex">
 
           {/* Background */}
           <div className="absolute inset-0 bg-black" />
@@ -95,7 +95,7 @@ function Login() {
 
           <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
 
-          <div className="relative z-10 flex w-full flex-col justify-between p-12 xl:p-16">
+          <div className="relative z-10 flex w-full flex-col justify-between p-8 xl:p-12">
 
             {/* Logo */}
 
@@ -127,7 +127,7 @@ function Login() {
 
             <div className="max-w-xl">
 
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-4 py-2">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1.5">
 
                 <ShieldCheck
                   size={16}
@@ -135,13 +135,13 @@ function Login() {
                 />
 
                 <span className="text-sm font-medium text-blue-300">
-                  Secure Digital Campus
+                  Your Campus, Connected
                 </span>
 
               </div>
 
 
-              <h2 className="text-4xl font-bold leading-tight text-white xl:text-5xl">
+              <h2 className="text-3xl font-bold leading-tight text-white xl:text-4xl">
 
                 One platform for
                 <span className="block text-blue-400">
@@ -151,18 +151,17 @@ function Login() {
               </h2>
 
 
-              <p className="mt-6 max-w-lg text-base leading-7 text-slate-400">
+              <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400">
 
-                Manage students, faculty, attendance, academic
-                performance and intelligent campus services from
-                one unified platform.
+                Access your academic information, campus services
+                and university resources from one unified platform.
 
               </p>
 
 
               {/* Features */}
 
-              <div className="mt-10 grid grid-cols-2 gap-4">
+              <div className="mt-6 grid grid-cols-2 gap-3">
 
                 <Feature
                   title="Student Management"
@@ -201,13 +200,13 @@ function Login() {
 
 
 
-        <div className="flex flex-1 items-center justify-center bg-slate-50 px-6 py-12">
+        <div className="flex h-full min-h-0 flex-1 items-center justify-center overflow-y-auto bg-slate-50 px-4 py-2 sm:px-6 sm:py-3">
 
           <div className="w-full max-w-md">
 
             {/* Mobile Logo */}
 
-            <div className="mb-10 flex items-center justify-center gap-3 lg:hidden">
+            <div className="mb-4 flex items-center justify-center gap-3 sm:mb-5 lg:hidden">
 
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900">
 
@@ -233,16 +232,16 @@ function Login() {
 
             {/* Login Card */}
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-10">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/50 sm:p-6">
 
               {/* Heading */}
 
-              <div className="mb-8">
+              <div className="mb-4 sm:mb-5">
 
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50">
+                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
 
                   <ShieldCheck
-                    size={24}
+                    size={21}
                     className="text-blue-600"
                   />
 
@@ -253,8 +252,7 @@ function Login() {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Sign in to access the Unified Campus
-                  administration portal.
+                  Sign in to access your Unified Campus account.
                 </p>
 
               </div>
@@ -264,14 +262,14 @@ function Login() {
 
               <form
                 onSubmit={handleLogin}
-                className="space-y-5"
+                className="space-y-3"
               >
 
                 {/* Email */}
 
                 <div>
 
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-1 block text-sm font-semibold text-slate-700">
                     Email address
                   </label>
 
@@ -284,13 +282,13 @@ function Login() {
 
                     <input
                       type="email"
-                      placeholder="admin@smartcampus.com"
+                      placeholder="user@smartcampus.com"
                       value={email}
                       onChange={(e) =>
                         setEmail(e.target.value)
                       }
                       required
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                     />
 
                   </div>
@@ -302,7 +300,7 @@ function Login() {
 
                 <div>
 
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-1 block text-sm font-semibold text-slate-700">
                     Password
                   </label>
 
@@ -325,7 +323,7 @@ function Login() {
                         setPassword(e.target.value)
                       }
                       required
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                     />
 
                     <button
@@ -363,10 +361,6 @@ function Login() {
 
                   </div>
 
-                  <span className="text-xs font-medium text-slate-400">
-                    Admin Portal
-                  </span>
-
                 </div>
 
 
@@ -375,7 +369,7 @@ function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-blue-600 hover:shadow-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-blue-600 hover:shadow-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60"
                 >
 
                   {loading ? (
@@ -401,7 +395,7 @@ function Login() {
 
               {/* Bottom Info */}
 
-              <div className="mt-8 border-t border-slate-100 pt-6">
+              <div className="mt-4 border-t border-slate-100 pt-3 sm:mt-5 sm:pt-4">
 
                 <div className="flex items-start gap-3">
 
@@ -412,8 +406,8 @@ function Login() {
 
                   <p className="text-xs leading-5 text-slate-500">
                     Your account is protected with secure
-                    authentication. Only authorized university
-                    administrators can access this portal.
+                    authentication. Only authorized campus users
+                    can access this portal.
                   </p>
 
                 </div>
@@ -425,8 +419,8 @@ function Login() {
 
             {/* Bottom */}
 
-            <p className="mt-6 text-center text-xs text-slate-400">
-              Unified Campus • Administration Portal
+            <p className="mt-3 text-center text-xs text-slate-400 sm:mt-4">
+              Unified Campus • Campus Portal
             </p>
 
           </div>
@@ -443,9 +437,9 @@ function Login() {
 
 function Feature({ title, text }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+    <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
 
-      <div className="mb-2 h-2 w-2 rounded-full bg-blue-400" />
+      <div className="mb-1.5 h-2 w-2 rounded-full bg-blue-400" />
 
       <h3 className="text-sm font-semibold text-white">
         {title}
@@ -460,4 +454,3 @@ function Feature({ title, text }) {
 }
 
 export default Login;
-
